@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 
+const axios = require('axios');
 
 class LoginForm extends Component {
 
@@ -11,18 +12,22 @@ class LoginForm extends Component {
         errors: {}
     };
 
+    handleChangeRoute = () => {
+        this.props.history.push('/');
+    };
+
     validate = () => {
-      const errors = {};
+        const errors = {};
 
-      const { account } = this.state;
-      if (account.username.trim() === '') {
-          errors.username = 'Username is required!';
-      }
-      if (account.password.trim() === '') {
-          errors.password = 'Password is required!';
-      }
+        const {account} = this.state;
+        if (account.username.trim() === '') {
+            errors.username = 'Username is required!';
+        }
+        if (account.password.trim() === '') {
+            errors.password = 'Password is required!';
+        }
 
-      return Object.keys(errors).length === 0 ? null : errors;
+        return Object.keys(errors).length === 0 ? null : errors;
     };
 
     handleSubmit = (event) => {
@@ -31,7 +36,23 @@ class LoginForm extends Component {
         const errors = this.validate();
         this.setState({errors: errors || {}});
         if (errors) return;
-
+        axios({
+            method: 'post',
+            url: 'http://localhost:3001/api/user/auth',
+            data: {
+                login: this.state.account.username,
+                password: this.state.account.password
+            }
+        }).then((response) => {
+            localStorage.setItem('token', response.data.token);
+            this.handleChangeRoute();
+            console.log(response);
+        }).catch((error) => {
+            const errors = {};
+            errors.password = 'Given username does\'t exists or password is wrong!';
+            this.setState({errors: errors || {}});
+            console.log(error);
+        });
         console.log("submit - np. zapytanie do serwera");
     };
 
@@ -68,7 +89,8 @@ class LoginForm extends Component {
                                className="form-control"
                                id="password"
                                placeholder="Password"/>
-                        { this.state.errors.password && <div className="alert alert-danger">{this.state.errors.password}</div> }
+                        {this.state.errors.password &&
+                        <div className="alert alert-danger">{this.state.errors.password}</div>}
                     </div>
                     <button type="submit" className="btn btn-primary">Login</button>
                 </form>
